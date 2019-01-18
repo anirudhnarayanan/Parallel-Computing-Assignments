@@ -1,0 +1,2 @@
+cc -O3 -std=c11 -fPIC   -c -o prelim.o prelim.c
+gcc  prelim.o -o prelim

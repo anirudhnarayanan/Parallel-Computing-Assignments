@@ -1,0 +1,4 @@
+prelim.c: In function ‘main’:
+prelim.c:10:9: warning: implicit declaration of function ‘gethostname’ [-Wimplicit-function-declaration]
+         gethostname(host,50);
+         ^
