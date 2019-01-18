@@ -1,0 +1,12 @@
+1) The compiler defaults normally to STRICT ANSI  unless implicitely specified. Hence it is required to specify BSD_SOURCE which has been deprecated and now it is known as default source. This allows the features.h (implicitely included by unistd.h) to not default __STRICT_ANSI__
+
+2) qsub is a command which submits the program to the portable batch system which schedules, which allocates computational tasks based on the resource availability.
+
+3) -q destination -l resource_list -N name 
+
+node =  unit with processors
+ppn = processor per node
+for example 4 cores 4 processors per node, is 16 processes
+
+
+4) Use -lm to compile the files. 
