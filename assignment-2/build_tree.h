@@ -7,16 +7,11 @@
 
 
 
-TreeNode* build_tree(float value1,float value2)
+TreeNode* build_tree(TreeNode* childleft,TreeNode* childright)
 {
-	TreeNode* root = new TreeNode();
 	
-	TreeNode* childleft = new TreeNode();
-	TreeNode* childright = new TreeNode() ;
-	childleft->sum = value1;
-	childright->sum = value2;
 
-	root->sum = value1 + value2;
+	TreeNode* root = new TreeNode(childleft->sum + childright->sum);
 	root->left = childleft;
 	root->right = childright;
 

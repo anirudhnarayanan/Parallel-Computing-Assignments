@@ -13,6 +13,11 @@ class TreeNode
 	float fromleft;
 	TreeNode* left;
 	TreeNode* right;
+
+	TreeNode(float sum1)
+	{
+		sum = sum1;
+	}
 		
 };
 
