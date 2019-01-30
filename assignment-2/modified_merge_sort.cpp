@@ -18,6 +18,28 @@ void printarray(vector<float> array)
 }
 
 
+void binary_hunt(vector<float>& array, int start,int end,float value)
+{
+	bool done=false;
+	while(!done)
+	{
+		int index = (end+start)/2;
+		if(array[index] > value && array[index-1] > value)
+		{
+			end = index - 2;
+		}
+		else if(array[index] < value && array[index-1] < value)
+			start = index+1;
+		else
+			return index;
+
+	}
+}
+void threaded_merge(int start, int end, vector<float>& array)
+{
+	//Code to run individual threads and store the right information
+	
+}
 
 void merge(int start,int end , vector<float>& array)
 {
@@ -69,10 +91,13 @@ void mergesort(int start,int end,vector<float>& array)
 	}
 
 	int middle = (start+end)/2;
-	mergesort(start,middle,array);
-	mergesort(middle+1,end,array);
+	mergesort(start,middle,array); //same process but with a little bit of modification
+	mergesort(middle+1,end,array); 
 
-	merge(start,end,array);
+	if(end-start <= THRESHOLD)
+		merge(start,end,array);
+	else
+		threadedmerge(start,end,array);
 }
 
 
