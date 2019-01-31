@@ -79,6 +79,11 @@ void mergesort(int start,int end,vector<float>& array)
 
 int main(int argc, char* argv[])
 {
+	if(argc<2)
+	{
+		cout<<"Usage "<<argv[0]<<" "<<"<comma separated unsorted array values>";
+		return 1;
+	}
 	char* array = argv[1];
 	vector<float> seglist;
         int len = strlen(array);
