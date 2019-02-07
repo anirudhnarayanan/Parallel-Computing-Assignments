@@ -10,7 +10,7 @@ extern float f2(float x, int intensity);
 extern float f3(float x, int intensity);
 extern float f4(float x, int intensity);
 
-  
+/*  
 float summation(char* f,float a,float b,int n,int intensity)
 {
 
@@ -62,6 +62,41 @@ float summation(char* f,float a,float b,int n,int intensity)
 		  break;
   }  
   
+}
+*/
+float summation(int f,float a,float b,int n,int intensity)
+{
+
+	float pre_product = (b-a)/n;
+        float summed_value = 0.0;
+	int i;
+	float function_eval;
+
+
+
+  
+  for(i=0;i<n;i++)
+  {
+    switch(f)
+    {
+      case 1:
+        function_eval = f1(a + (i+0.5)*pre_product,intensity);
+	break;
+      case 2:
+        function_eval = f2(a + (i+0.5)*pre_product,intensity);
+        break;
+      case 3:
+        function_eval = f3(a + (i+0.5)*pre_product,intensity);
+        break;
+      case 4:
+        function_eval = f4(a + (i+0.5)*pre_product,intensity);
+        break;
+  }  
+
+		  summed_value += function_eval;
+}
+
+		  return pre_product*summed_value;
 }
 int main (int argc, char* argv[]) {
 
