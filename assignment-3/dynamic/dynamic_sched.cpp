@@ -154,8 +154,12 @@ void* get_next_task(int &begin, int &end)
 	pthread_mutex_lock(&task_getter_mutex);
 	begin = next_available_beginning;
 	end = next_available_end;
+	cout<<endl<<begin<<" "<<end<<endl;
 	if(end == current_args.n)
+	{
 		task_done = true;
+		return NULL;
+	}
 	next_available_beginning = next_available_beginning + current_args.granularity;
 	if(current_args.n - (next_available_beginning + current_args.granularity) >= current_args.granularity)
 	{
@@ -176,8 +180,11 @@ void* worker_threads_iteration(void* sum1)
 		int begin,end;
 		float mysum;
 		get_next_task(begin,end);
-		cout<<begin;
-		cout<<end;
+		//cout<<begin;
+		//cout<<end;
+		cout<<endl<<"task done"<<endl;
+		cout<<task_done<<endl;
+
 		summation_iteration(begin,end);	
 	        		
 	}
@@ -232,8 +239,17 @@ int main (int argc, char* argv[]) {
 
   pthread_t *integral_threads = new pthread_t[nbthreads];
 
+  current_args.f = functionid;
+  current_args.a = a;
+  current_args.b = b;
+  current_args.n = n;
+  current_args.intensity = intensity;
+
 
   float pre_product = (b-a)/n;
+
+  current_args.pre_product = pre_product;
+  current_args.granularity = granularity;
 
 
   next_available_beginning = 0;
@@ -249,7 +265,6 @@ int main (int argc, char* argv[]) {
     for(int i=0;i<nbthreads;i++)
 	    pthread_create(&integral_threads[i],NULL,worker_threads_iteration,(void*)&mysum);
     
-    return 0;
   
     for(int i =0;i<nbthreads;i++)
 	  pthread_join(integral_threads[i],NULL);
