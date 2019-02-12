@@ -19,11 +19,11 @@ float f4(float x, int intensity);
 }
 #endif
 
-float summed_value = 0.0;
-pthread_mutex_t mutex;
+float summed_value = 0.0; //Declaring global sum value for iteration
+pthread_mutex_t mutex; //Declaring Mutex
 int i,k;
 
-struct args
+struct args //Struct arguments for for passing into the iteration
 {
   int f;
   float a;
@@ -36,29 +36,25 @@ struct args
 }*current_args;
 
 
-void* summation_thread(void* arguments)
+void* summation_thread(void* arguments)  //Function to call Thread when being executed range based arguments, being converted and run
 {
-        struct args *argsnow = (struct args *)arguments;
-
-        int f = argsnow->f;
-        float a = argsnow->a;
-        float b= argsnow->b;
-        int start = argsnow->start;
-        int end = argsnow->end;
-        int intensity = argsnow->intensity;
-        float pre_product = argsnow->pre_product;
-
-
-        //cout<<endl<<f<<" "<<a<<" "<<b<<" "<<start<<" "<<end<<" "<<intensity<<" "<<pre_product;
+  struct args *argsnow = (struct args *)arguments; //Initialize all arguments meant for computation
+  int f = argsnow->f;
+  float a = argsnow->a;
+  float b= argsnow->b;
+  int start = argsnow->start;
+  int end = argsnow->end;
+  int intensity = argsnow->intensity;
+  float pre_product = argsnow->pre_product;
 
 
-        int i;
-        float function_eval;
+  int i;
+  float function_eval;
 
 
 
 
-  for(i=start;i<end;i++)
+  for(i=start;i<end;i++)   //Initalize for loop to perform integration
   {
     switch(f)
     {
@@ -74,39 +70,36 @@ void* summation_thread(void* arguments)
       case 4:
         function_eval = f4(a + (i+0.5)*pre_product,intensity);
         break;
+    }
+
+    argsnow->inside_sum += function_eval; //Chunk them before equating to reference object
   }
 
-                  argsnow->inside_sum += function_eval;
-}
+  (*((args*)arguments)).inside_sum = argsnow->inside_sum;  //For summation thread add up all the values necessary and store in reference object to main
 
-               (*((args*)arguments)).inside_sum = argsnow->inside_sum;
-               //cout<<endl<<(*((args*)arguments)).inside_sum<<endl;
-
-                  return NULL;
+  return NULL;
 }
 
 
 
 
-void* summation_iteration(void* arguments)
+void* summation_iteration(void* arguments)  //Iteration call function
 {
-	struct args *argsnow = (struct args *)arguments;
-
-	int f = argsnow->f;
-	float a = argsnow->a;
-	float b= argsnow->b;
-	int start = argsnow->start;
-	int end = argsnow->end;
-	int intensity = argsnow->intensity;
-	float pre_product = argsnow->pre_product;
-
-
-	//cout<<endl<<f<<" "<<a<<" "<<b<<" "<<start<<" "<<end<<" "<<intensity<<" "<<pre_product; 
+  struct args *argsnow = (struct args *)arguments;  //All iteration parameters initialization
+  int f = argsnow->f;  //parameters initialized
+  float a = argsnow->a;
+  float b= argsnow->b;
+  int start = argsnow->start;
+  int end = argsnow->end;
+  int intensity = argsnow->intensity;
+  float pre_product = argsnow->pre_product;
 
 
 
-	int i;
-	float function_eval;
+
+
+  int i;
+  float function_eval;
 
 
 
@@ -127,13 +120,13 @@ void* summation_iteration(void* arguments)
       case 4:
         function_eval = f4(a + (i+0.5)*pre_product,intensity);
         break;
-  }  
+    }  
 
-                  pthread_mutex_lock(&mutex);
-		  summed_value += function_eval;
-                  pthread_mutex_unlock(&mutex);
-}
-		  return NULL;
+    pthread_mutex_lock(&mutex);  //Lock to sum to global value in each iteration
+    summed_value += function_eval; //Sum to global value for each iterationn
+    pthread_mutex_unlock(&mutex);  //Unlock to allow other summations to the variable
+  }
+  return NULL;
 }
 
 
@@ -153,164 +146,108 @@ int main (int argc, char* argv[]) {
   char* sync = argv[7];
 
 
+  if(nbthreads>n) //If there are more threads than there are n,for convenience start with n itself
+    nbthreads = n;
   int split_num = n/nbthreads;
   current_args = new args[nbthreads];
 
-  pthread_t *integral_threads = new pthread_t[nbthreads];
+  pthread_t *integral_threads = new pthread_t[nbthreads];  //Initialize number of threads
   pthread_mutex_init(&mutex,NULL);
   
   
   float pre_product = (b-a)/n;
   
   k =0;
-clock_t start,end;
-
-  double cpu_time_used;
 
 
-  if(strcmp(sync,"iteration")==0)
+  std::chrono::time_point<std::chrono::system_clock> start_clock, end_clock; //Initialize Clock to find difference and time taken
+  start_clock = std::chrono::system_clock::now();
+
+  if(strcmp(sync,"iteration")==0)  //Iteration check and call
   {
-        start = clock();
-  for(i=0;i<n;i+=split_num)
-  {
-	if(n - (i + split_num) >= split_num)
-          {
-	  current_args[k].f = functionid;
-	  current_args[k].a = a;
-	  current_args[k].b = b;
-	  current_args[k].start = i;
-	  current_args[k].end = i+split_num;
-	  current_args[k].intensity = intensity;
-	  current_args[k].pre_product = pre_product;
-           pthread_create(&integral_threads[k],NULL,summation_iteration,(void*)&current_args[k]);
-	  k++;
-	  }
-	else
-	{
-	  current_args[k].f = functionid;
-	  current_args[k].a = a;
-	  current_args[k].b = b;
-	  current_args[k].start = i;
-	  current_args[k].end = n;
-	  current_args[k].intensity = intensity;
-	  current_args[k].pre_product = pre_product;
-	   pthread_create(&integral_threads[k],NULL,summation_iteration,(void*)&current_args[k]);
-	  k++;
-	  i += n; //Termination condition, once we can't equally divide the last part we, sum it and terminate loop, so that we don't have residuals.
-	}
+    for(i=0;i<n;i+=split_num)
+		{
+			if(n - (i + split_num) >= split_num)
+			{
+        current_args[k].f = functionid;  //integration arguments initalized
+			  current_args[k].a = a;
+			  current_args[k].b = b;
+			  current_args[k].start = i;
+			  current_args[k].end = i+split_num;
+			  current_args[k].intensity = intensity;
+        current_args[k].pre_product = pre_product;
+        pthread_create(&integral_threads[k],NULL,summation_iteration,(void*)&current_args[k]);
+        k++;
+      }
+      else
+      {
+        current_args[k].f = functionid;
+        current_args[k].a = a;
+        current_args[k].b = b;
+        current_args[k].start = i;
+        current_args[k].end = n;
+        current_args[k].intensity = intensity;
+        current_args[k].pre_product = pre_product;
+        pthread_create(&integral_threads[k],NULL,summation_iteration,(void*)&current_args[k]);
+        k++;
+        i += n; //Termination condition, once we can't equally divide the last part we, sum it and terminate loop, so that we don't have residuals.
+      }
 	  
-  }
+    }
 
-  for(i=0;i<k;i++)
-  {
-	  pthread_join(integral_threads[i],NULL);
-  }
+    for(i=0;i<k;i++)
+    {
+      pthread_join(integral_threads[i],NULL);
+    }
 
-        end = clock();
-        cpu_time_used = ((double)(end - start))/CLOCKS_PER_SEC;
-
-        fprintf(stderr,"%f",cpu_time_used);
-  
-  	cout<<summed_value*pre_product;
+    cout<<summed_value*pre_product;
   }
   else if(strcmp(sync,"thread")==0)
   {
-	  current_args = new args[nbthreads];
-        start = clock();
-	for(int i =0;i<n;i+=split_num)
-        {	  
-	  current_args[k].f = functionid;
-	  current_args[k].a = a;
-	  current_args[k].b = b;
-	  current_args[k].start = i;
-	  current_args[k].intensity = intensity;
-	  current_args[k].pre_product = pre_product;
-	  current_args[k].inside_sum = 0;
+	  current_args = new args[nbthreads]; //Curreng threads initialized
+	  for(int i =0;i<n;i+=split_num)
+    {	  
+	    current_args[k].f = functionid; //Function values intialized
+	    current_args[k].a = a;
+	    current_args[k].b = b;
+	    current_args[k].start = i;
+	    current_args[k].intensity = intensity;
+	    current_args[k].pre_product = pre_product;
+	    current_args[k].inside_sum = 0;
 
-	if(n - (i + split_num) >= split_num)
-          {
-	  current_args[k].end = i+split_num;
-           pthread_create(&integral_threads[k],NULL,summation_thread,(void*)&current_args[k]);
-	  k++;
-	  }
-	else
-	{
-	  current_args[k].end = n;
-	   pthread_create(&integral_threads[k],NULL,summation_thread,&current_args[k]);
-	  k++;
-	  i += n; //Termination condition, once we can't equally divide the last part we, sum it and terminate loop, so that we don't have residuals.
-	}
+	    if(n - (i + split_num) >= split_num)
+      {
+	      current_args[k].end = i+split_num;
+        pthread_create(&integral_threads[k],NULL,summation_thread,(void*)&current_args[k]);
+	      k++;
+	    }
+	    else
+	    {
+	      current_args[k].end = n;
+	      pthread_create(&integral_threads[k],NULL,summation_thread,&current_args[k]);
+	      k++;
+	      i += n; //Termination condition, once we can't equally divide the last part we, sum it and terminate loop, so that we don't have residuals.
+	    }
 
-       }
+    }
 
-
-
-        for(int i =0;i<k;i++)
-            pthread_join(integral_threads[i],NULL);
+    for(int i =0;i<k;i++)
+      pthread_join(integral_threads[i],NULL);
 	
-        float totsum = 0;
-        for(int i =0;i<k;i++)
-            totsum+=(current_args[i].inside_sum*pre_product);
+    float totsum = 0;
+    for(int i =0;i<k;i++)
+      totsum+=(current_args[i].inside_sum*pre_product);  //Join and Sum
 
-        end = clock();
-        cpu_time_used = ((double)(end - start))/CLOCKS_PER_SEC;
-
-        fprintf(stderr,"%f",cpu_time_used);
-
-
-
-        cout<<totsum;
-
-	  /*
-  for(i=0;i<n;i+=split_num)
-  {
-	if(n - (i + split_num) >= split_num)
-          {
-	  current_args[k].f = functionid;
-	  current_args[k].a = a;
-	  current_args[k].b = b;
-	  current_args[k].start = i;
-	  current_args[k].end = i+split_num;
-	  current_args[k].intensity = intensity;
-	  current_args[k].pre_product = pre_product;
-	  current_args[k].inside_sum = 0;
-           pthread_create(&integral_threads[k],NULL,summation_thread,(void*)&current_args[k]);
-	  k++;
-	  }
-	else
-	{
-	  current_args[k].f = functionid;
-	  current_args[k].a = a;
-	  current_args[k].b = b;
-	  current_args[k].start = i;
-	  current_args[k].end = n;
-	  current_args[k].intensity = intensity;
-	  current_args[k].pre_product = pre_product;
-	  current_args[k].inside_sum = 0;
-	   pthread_create(&integral_threads[k],NULL,summation_thread,&current_args[k]);
-	  k++;
-	  i += n; //Termination condition, once we can't equally divide the last part we, sum it and terminate loop, so that we don't have residuals.
-	}
-	  
-  }
-   
-  for(i=0;i<k;i++)
-  {
-	  pthread_join(integral_threads[i],NULL);
-  }
-
-  for(i=0;i<k;i++)
-  {
-
-	  summed_value += current_args[k].inside_sum;
-  }
-  
-  cout<<endl<<summed_value*pre_product<<endl;
-*/
+    cout<<totsum;
   
   }
-  else
+  else //If incorrect sync value inputted 
   	cout<<"Please input a valid type for sync";
+
+
+  end_clock = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = end_clock-start_clock;
+	cerr<<elapsed_seconds.count();
 
   return 0;
 }
