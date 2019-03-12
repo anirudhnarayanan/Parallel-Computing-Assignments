@@ -31,6 +31,7 @@ do
     # correctness
 #    if [ $1 = "static
     ANSW=$(./"$1"_sched ${t[0]} 0 10 ${t[1]} ${t[2]} ${t[3]} ${t[4]} ${t[5]}  2> .time)  
+    echo "$1_sched ${t[0]} 0 10 ${t[1]} ${t[2]} ${t[3]} ${t[4]} ${t[5]}"
 
     if ./../approx ${ANSW} ${t[-1]};
     then
