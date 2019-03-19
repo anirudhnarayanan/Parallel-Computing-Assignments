@@ -153,8 +153,6 @@ int main (int argc, char* argv[]) {
 
 
   
-  for(int i=0;i<20000;i++)
-    L[i] = new int[20000];
  std::chrono::time_point<std::chrono::system_clock> start_clock, end_clock;
    start_clock = std::chrono::system_clock::now();
   //result = lcs(X,Y,m,n,nbthreads);
@@ -164,7 +162,7 @@ int main (int argc, char* argv[]) {
     #pragma omp single
     {
     //result = lcs1(X,Y,m,n,nbthreads,0,0);
-    result = lcs(X,Y,m,n,nbthreads,0,0);
+    result = lcs(X,Y,m,n,nbthreads);
 
     }
   }
