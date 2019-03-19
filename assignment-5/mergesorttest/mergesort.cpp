@@ -38,14 +38,14 @@ int binarySearch(int* arr , int l, int r, int x) //RE-ENGINEER TO IMPROVE AND GE
 {
     //printarray(arr);
     int mid;
-    cout<<endl;
-    cout<<"rightleft"<<endl;
-    cout<<r<<" "<<l;
-    cout<<endl;
+    //cout<<endl;
+    //cout<<"rightleft"<<endl;
+    //cout<<r<<" "<<l;
+    //cout<<endl;
     if (r >= l) {
         mid = l + (r - l) / 2;
 
-	cout<<endl<<mid<<" "<<arr[mid-1]<<" "<<x<<endl;
+	//cout<<endl<<mid<<" "<<arr[mid-1]<<" "<<x<<endl;
 
 	//cout<<endl<<"mid "<<mid;
 
@@ -100,7 +100,7 @@ void threaded_merge(int start, int end, int* array) //log(n) time
 	//vector<float> array2;
 	
 	
-	cout<<endl<<start<<" "<<end;
+	//cout<<endl<<start<<" "<<end;
 
 	int middle = (start+end)/2;
 	int *array1 = new int[middle-start+1];
@@ -134,10 +134,10 @@ void threaded_merge(int start, int end, int* array) //log(n) time
 
 
 		int neighbor_index = binarySearch(array2,0,m,array1[i]);
-		cout<<endl<<"element "<<array1[i]<<endl;
-		cout<<endl<<"neighbor index "<<neighbor_index<<endl;
-		cout<<endl<<"array search";
-		cout<<endl;
+		//cout<<endl<<"element "<<array1[i]<<endl;
+		//cout<<endl<<"neighbor index "<<neighbor_index<<endl;
+		//cout<<endl<<"array search";
+		//cout<<endl;
 		//printme(array2,0,m);
 		array[start + my_index + neighbor_index] = array1[i];
 		temp[my_index + neighbor_index] = array1[i];
@@ -149,10 +149,10 @@ void threaded_merge(int start, int end, int* array) //log(n) time
 	{
 		int my_index = i;
 		int neighbor_index = binarySearch(array1,0,l,array2[i]);
-		cout<<endl<<"element "<<array2[i]<<endl;
-		cout<<endl<<"neighbor index "<<neighbor_index<<endl;
-		cout<<endl<<"array search";
-		cout<<endl;
+		//cout<<endl<<"element "<<array2[i]<<endl;
+		//cout<<endl<<"neighbor index "<<neighbor_index<<endl;
+		//cout<<endl<<"array search";
+		//cout<<endl;
 		//printme(array1,0,l);
 		array[start + my_index + neighbor_index] = array2[i];
 		temp[my_index + neighbor_index] = array2[i];
@@ -175,8 +175,8 @@ void merge(int start,int end , int* array,int nbthreads,int n)
 
 	int i = start;
 	int j = middle +1;
-	int k = start;
-	int *temp = new int[n];
+	int k = 0;
+	int *temp = new int[end - start +1 ];
 	
 
 	
@@ -213,10 +213,9 @@ void merge(int start,int end , int* array,int nbthreads,int n)
 
 	for(int i=start;i<=end;i++)
 	{
-		array[i] = temp[i];
-	
-
-	
+	        	
+		//array[i] = temp[i - start];
+		array[i] = i;
 	}
 	delete[] temp;
 }
@@ -224,24 +223,30 @@ void merge(int start,int end , int* array,int nbthreads,int n)
 void mergesort(int start,int end,int* array,int nbthreads,int n)
 {
 	omp_set_num_threads(nbthreads);
-	int THRESHOLD = 2;
+        int THRESHOLD = 2;
 	if(start>=end)
 	{
 		return ;
 	}
 
+        //cout<<"startend"<<endl;
+        //cout<<start<<" "<<end<<endl;
 	int middle = (start+end)/2;
 	#pragma omp parallel
 	{
+	#pragma omp single
+	{
 	#pragma omp task
-	mergesort(start,middle,array,nbthreads,n); //same process but with a little bit of modification
-
-        #pragma omp task 
-	mergesort(middle+1,end,array,nbthreads,n); 
-	#pragma omp taskwait
+	{
+	mergesort(start,middle,array,nbthreads,n/2); //same process but with a little bit of modification
 	}
+	mergesort(middle+1,end,array,nbthreads,n/2); 
+        //cout<<"merge "<<start<< " "<<end<<endl;
+	}
+	#pragma omp taskwait
 	merge(start,end,array,nbthreads,n);
-//threaded_merge(start,end,array);
+	//threaded_merge(start,end,array);
+	}
 
 }
 
@@ -272,11 +277,17 @@ int main(int argc, char* argv[])
   generateMergeSortData (arr, n);
 
   //insert sorting code here.
+  
+   int* temp = new int[n];
 
 
+   //for(int i =0;i<n;i++)
+   // cout<<arr[i]<<" ";
+
+//cout<<endl;
  std::chrono::time_point<std::chrono::system_clock> start_clock, end_clock;
    start_clock = std::chrono::system_clock::now();
-mergesort(0,n-1,arr,nbthreads,n);
+   mergesort(0,n-1,arr,nbthreads,n);
   end_clock = std::chrono::system_clock::now();
 std::chrono::duration<double> elapsed_seconds = end_clock-start_clock;
   cerr<<elapsed_seconds.count();
@@ -288,7 +299,7 @@ std::chrono::duration<double> elapsed_seconds = end_clock-start_clock;
   // cout<<endl;
   
 	
-  // for(int i =0;i<n;i++)
+  //for(int i =0;i<n;i++)
    // cout<<arr[i]<<" ";
 
 

@@ -209,13 +209,7 @@ void* mergesort(void* inargs)
 	pthread_join(split,NULL);
         //threaded_merge(start,end);
 	//threaded_merge(start,end);
-	if(end-start <= THRESHOLD)
-		merge(start,end);
-	else
-	{
-		//cout<<"threshold hit";
-		threaded_merge(start,end);
-	}
+	threaded_merge(start,end);
 
 	//printarray(array);
 	

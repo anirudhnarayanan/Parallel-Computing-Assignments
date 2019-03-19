@@ -2,6 +2,7 @@
 #include<string.h>
 #include<stdlib.h>
 #include<vector>
+#include<omp.h>
 
 
 using namespace std;
@@ -22,8 +23,14 @@ int binarySearch(int* arr , int l, int r, int x) //RE-ENGINEER TO IMPROVE AND GE
 {
     //printarray(arr);
     int mid;
+    cout<<endl;
+    cout<<"rightleft"<<endl;
+    cout<<r<<" "<<l;
+    cout<<endl;
     if (r >= l) {
         mid = l + (r - l) / 2;
+
+	cout<<endl<<mid<<" "<<arr[mid-1]<<" "<<x<<endl;
 
 	//cout<<endl<<"mid "<<mid;
 
@@ -31,7 +38,9 @@ int binarySearch(int* arr , int l, int r, int x) //RE-ENGINEER TO IMPROVE AND GE
 
         // If the element is present at the middle
         // itself
-        if (arr[mid-1] < x && arr[mid] > x )
+	if(mid == 0 && arr[mid] > x)
+		return mid;
+        if (arr[mid-1] <= x && arr[mid] >= x )
             return mid;
 
 	
@@ -39,7 +48,7 @@ int binarySearch(int* arr , int l, int r, int x) //RE-ENGINEER TO IMPROVE AND GE
 
         // If element is smaller than mid, then
         // it can only be present in left subarray
-        if(arr[mid-1] > x && arr[mid] > x )
+        if(arr[mid-1] >= x && arr[mid] >= x )
 	{
 	    //cout<<endl<<"Enters both less than"<<endl;
             if(mid==1)
@@ -61,12 +70,22 @@ int binarySearch(int* arr , int l, int r, int x) //RE-ENGINEER TO IMPROVE AND GE
     return mid;
 }
 
+void printme(int* array, int start,int end)
+{
+	for(int i = start;i<end;i++)
+		cout<<array[i]<<" ";
+
+	cout<<endl;
+}
 void threaded_merge(int start, int end, int* array) //log(n) time
 {
 	//Code to run individual threads and store the right information
 	
         //vector<float> array1;
 	//vector<float> array2;
+	
+	
+	cout<<endl<<start<<" "<<end;
 
 	int middle = (start+end)/2;
 	int *array1 = new int[middle-start+1];
@@ -77,6 +96,7 @@ void threaded_merge(int start, int end, int* array) //log(n) time
 	int k = start;
 	int l = 0;
 	int m = 0;
+	int *temp = new int[end-start+1];
 	//float temp[array.size()];
 
 	for(i = start;i<=middle;i++)
@@ -91,14 +111,22 @@ void threaded_merge(int start, int end, int* array) //log(n) time
 	
 	
 	k = 0;
+
 	for(i=0;i<l;i++)
 	{
 		int my_index = i;
 
+
+
 		int neighbor_index = binarySearch(array2,0,m,array1[i]);
-		//cout<<endl<<"Total Location";
-		//cout<<endl<<" "<<neighbor_index+my_index<<endl;
+		cout<<endl<<"element "<<array1[i]<<endl;
+		cout<<endl<<"neighbor index "<<neighbor_index<<endl;
+		cout<<endl<<"array search";
+		cout<<endl;
+		//printme(array2,0,m);
 		array[start + my_index + neighbor_index] = array1[i];
+		temp[my_index + neighbor_index] = array1[i];
+		//printme(array,0,6);
 		k++;
 	}
 	
@@ -106,22 +134,34 @@ void threaded_merge(int start, int end, int* array) //log(n) time
 	{
 		int my_index = i;
 		int neighbor_index = binarySearch(array1,0,l,array2[i]);
+		cout<<endl<<"element "<<array2[i]<<endl;
+		cout<<endl<<"neighbor index "<<neighbor_index<<endl;
+		cout<<endl<<"array search";
+		cout<<endl;
+		//printme(array1,0,l);
 		array[start + my_index + neighbor_index] = array2[i];
+		temp[my_index + neighbor_index] = array2[i];
+		//printme(array,0,6);
 		k++;
 	}
-	
+        
+	//for(i = start;i<=end;i++)
+	//{
+
+	//}	
 
 	
 }
 
-void merge(int start,int end , vector<float>& array)
+void merge(int start,int end , int* array,int nbthreads)
 {
 	int middle = (start+end)/2;
+	omp_set_num_threads(nbthreads);
 
 	int i = start;
 	int j = middle +1;
 	int k = start;
-	float temp[array.size()];
+	int *temp = new int[end-start];
 	
 
 	
@@ -137,16 +177,24 @@ void merge(int start,int end , vector<float>& array)
 		}
 	}
 
-	
+        #pragma omp parallel
+	{	
+	#pragma omp task
+		{
 	while(i<=middle)
 	{
 		temp[k++] = array[i++];
 	}
+		}
+	#pragma omp task
+		{
 	while(j<=end)
 	{
 		temp[k++] = array[j++];
 	}
-	
+		}
+	}
+	#pragma omp taskwait
 
 	for(int i=start;i<=end;i++)
 	{
@@ -154,11 +202,12 @@ void merge(int start,int end , vector<float>& array)
 	
 
 	
-}
+	}
 }
 
-void mergesort(int start,int end,int* array)
+void mergesort(int start,int end,int* array,int nbthreads)
 {
+	omp_set_num_threads(nbthreads);
 	int THRESHOLD = 2;
 	if(start>=end)
 	{
@@ -166,9 +215,16 @@ void mergesort(int start,int end,int* array)
 	}
 
 	int middle = (start+end)/2;
-	mergesort(start,middle,array); //same process but with a little bit of modification
-	mergesort(middle+1,end,array); 
-	threaded_merge(start,end,array);
+	#pragma omp parallel
+	{
+	#pragma omp task
+	mergesort(start,middle,array,nbthreads); //same process but with a little bit of modification
+
+	mergesort(middle+1,end,array,nbthreads); 
+	}
+	#pragma omp taskwait
+	merge(start,end,array,nbthreads);
+//threaded_merge(start,end,array);
 
 }
 
@@ -176,56 +232,44 @@ void mergesort(int start,int end,int* array)
 
 int main(int argc, char* argv[])
 {
-	if(argc<2)
-	{
-		cout<<"Usage "<<argv[0]<<" "<<"<comma separated unsorted array values>";
-		return 1;
-	}
-	char* array = argv[1];
-	vector<int> seglist;
-        int len = strlen(array);
-	char* buffer = strdup("");
-	int j =0;
-	for(int i = 0;i< len;i++)
-	{
-		if(array[i] == ',')
-		{
-			seglist.push_back(stoi(buffer));
-			buffer = strdup("");
-			j=0;
-		}   
-		else
-		{
-		        buffer[j] = array[i];
-			j++;
-		}
-	}
+#pragma omp parallel
+  {
+    int fd = open (argv[0], O_RDONLY);
+    if (fd != -1) {
+      close (fd);
+    }
+    else {
+      std::cerr<<"something is amiss"<<std::endl;
+    }
+  }
 
-	seglist.push_back(stof(buffer));
+  if (argc < 3) { std::cerr<<"usage: "<<argv[0]<<" <n> <nbthreads>"<<std::endl;
+    return -1;
+  }
 
-	int* array1 = new int[seglist.size() + 1];
+  int n = atoi(argv[1]);
+  int nbthreads = atoi(argv[2]);
 
-        for(int i = 0;i<seglist.size();i++)
-	array1[i] = seglist[i];	
+  // get arr data
+  int * arr = new int [n];
+  generateMergeSortData (arr, n);
 
-	//printarray(seglist);
+  //insert sorting code here.
 
-	mergesort(0,seglist.size()-1,array1);
-	
-	//int response = binarySearch(seglist, 0,seglist.size(),2);
-	cout<<endl<<"ended"<<endl;
-	//cout<<response;
-	
-	for(int i =0;i<seglist.size();i++)
-		cout<<array1[i]<<" ";
+
+  mergesort(0,n-1,arr);
+
+  checkMergeSortResult (arr, n);
+
 
 	
-
-
-
-
-	//printarray(seglist);
+   cout<<endl;
 	
-	
+   for(int i =0;i<n;i++)
+    cout<<arr[i]<<" ";
+
+
+
+  delete[] arr;
 
 }

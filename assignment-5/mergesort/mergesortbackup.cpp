@@ -38,14 +38,14 @@ int binarySearch(int* arr , int l, int r, int x) //RE-ENGINEER TO IMPROVE AND GE
 {
     //printarray(arr);
     int mid;
-    cout<<endl;
-    cout<<"rightleft"<<endl;
-    cout<<r<<" "<<l;
-    cout<<endl;
+    //cout<<endl;
+    //cout<<"rightleft"<<endl;
+    //cout<<r<<" "<<l;
+    //cout<<endl;
     if (r >= l) {
         mid = l + (r - l) / 2;
 
-	cout<<endl<<mid<<" "<<arr[mid-1]<<" "<<x<<endl;
+	//cout<<endl<<mid<<" "<<arr[mid-1]<<" "<<x<<endl;
 
 	//cout<<endl<<"mid "<<mid;
 
@@ -92,7 +92,7 @@ void printme(int* array, int start,int end)
 
 	cout<<endl;
 }
-void threaded_merge(int start, int end, int* array) //log(n) time
+void threaded_merge(int start, int end, int* array,int nbthreads) //log(n) time
 {
 	//Code to run individual threads and store the right information
 	
@@ -100,11 +100,14 @@ void threaded_merge(int start, int end, int* array) //log(n) time
 	//vector<float> array2;
 	
 	
-	cout<<endl<<start<<" "<<end;
+	//cout<<endl<<start<<" "<<end;
+	omp_set_dynamic(0);
+	omp_set_num_threads(nbthreads);
 
 	int middle = (start+end)/2;
 	int *array1 = new int[middle-start+1];
 	int *array2 = new int[end-middle+1];
+        int *tempa = new int[end-start + 1];
 
 	int i = start;
 	int j = middle +1;
@@ -114,56 +117,84 @@ void threaded_merge(int start, int end, int* array) //log(n) time
 	int *temp = new int[end-start+1];
 	//float temp[array.size()];
 
+        #pragma omp parallel for schedule(static)	
 	for(i = start;i<=middle;i++)
-		array1[l++] = array[i];
-	
+	{
+		array1[i - start] = array[i];
+                //tempa[i - start] = array[i];
+	}
+        #pragma omp parallel for schedule(static)	
 	for(j=middle+1;j<=end;j++)
-		array2[m++] = array[j];
-	
-	//printarray(array1);
-	//printarray(array2);
+	{
+		array2[j - middle-1] = array[j];
+		//tempa[j - middle-1] = array[j];
+	}
+
 
 	
 	
 	k = 0;
-
-	for(i=0;i<l;i++)
-	{
-		int my_index = i;
-
-
-
-		int neighbor_index = binarySearch(array2,0,m,array1[i]);
-		cout<<endl<<"element "<<array1[i]<<endl;
-		cout<<endl<<"neighbor index "<<neighbor_index<<endl;
-		cout<<endl<<"array search";
-		cout<<endl;
-		//printme(array2,0,m);
-		array[start + my_index + neighbor_index] = array1[i];
-		temp[my_index + neighbor_index] = array1[i];
-		//printme(array,0,6);
-		k++;
-	}
-	
-	for(i=0;i<m;i++)
-	{
-		int my_index = i;
-		int neighbor_index = binarySearch(array1,0,l,array2[i]);
-		cout<<endl<<"element "<<array2[i]<<endl;
-		cout<<endl<<"neighbor index "<<neighbor_index<<endl;
-		cout<<endl<<"array search";
-		cout<<endl;
-		//printme(array1,0,l);
-		array[start + my_index + neighbor_index] = array2[i];
-		temp[my_index + neighbor_index] = array2[i];
-		//printme(array,0,6);
-		k++;
-	}
         
-	//for(i = start;i<=end;i++)
-	//{
+        //#pragma omp parallel for schedule(dynamic,1) 
+        #pragma omp parallel for schedule(static)	
+	for(i=0;i< middle-start + 1;i++)
+	{
+		//cout<<i<<endl;
+		int my_index = i;
 
-	//}	
+
+
+		//int neighbor_index = binarySearch(array2,0,m,array1[i]);
+		int neighbor_index = binarySearch(array2,0,end-middle,array1[i]);
+                //int neighbor_index = 0;
+		//cout<<endl<<"element "<<array1[i]<<endl;
+		//cout<<endl<<"neighbor index "<<neighbor_index<<endl;
+		//cout<<endl<<"array search";
+		//cout<<endl;
+		//printme(array2,0,m);
+		if(start + my_index + neighbor_index > end || start + my_index + neighbor_index < start)
+                    cout<<"insert out of my range";
+		array[start + my_index + neighbor_index] = array1[i];
+		//temp[my_index + neighbor_index] = array1[i];
+		//printme(array,0,10);
+		k++;
+	}
+
+         
+        #pragma omp parallel for schedule(static)	
+	for(i=0;i<end-middle;i++)
+	{
+		int my_index = i;
+		//int neighbor_index = binarySearch(array1,0,l,array2[i]);
+		int neighbor_index = binarySearch(array1,0,middle-start +1,array2[i]);
+		//cout<<endl<<"element "<<array2[i]<<endl;
+		//cout<<endl<<"neighbor index "<<neighbor_index<<endl;
+		//cout<<endl<<"array search";
+		//cout<<endl;
+		//printme(array1,0,l);
+		if(start + my_index + neighbor_index > end || start + my_index + neighbor_index < start)
+                    cout<<"insert out of my range";
+		array[start + my_index + neighbor_index] = array2[i];
+		//temp[my_index + neighbor_index] = array2[i];
+		//printme(array,0,10);
+		k++;
+	
+        }
+	
+        /*
+        #pragma omp parallel for schedule(static) 
+	for(i = start;i<=end;i++)
+	{
+            array[i] = temp[i - start];
+
+	}
+*/
+
+ 
+		
+        delete[] array1;
+        delete[] array2;
+        delete[] temp;
 
 	
 }
@@ -175,8 +206,8 @@ void merge(int start,int end , int* array,int nbthreads,int n)
 
 	int i = start;
 	int j = middle +1;
-	int k = start;
-	int *temp = new int[n];
+	int k = 0;
+	int *temp = new int[end - start +1 ];
 	
 
 	
@@ -192,56 +223,50 @@ void merge(int start,int end , int* array,int nbthreads,int n)
 		}
 	}
 
-        //#pragma omp parallel
-	//{	
-	//#pragma omp task
-	//	{
 	while(i<=middle)
 	{
 		temp[k++] = array[i++];
 	}
-	//	}
-	//#pragma omp task
-//		{
 	while(j<=end)
 	{
 		temp[k++] = array[j++];
 	}
-		//}
-//	}
-//	#pragma omp taskwait
 
 	for(int i=start;i<=end;i++)
 	{
-		array[i] = temp[i];
-	
-
-	
+	        	
+		array[i] = i;
 	}
 	delete[] temp;
 }
 
 void mergesort(int start,int end,int* array,int nbthreads,int n)
 {
-	omp_set_num_threads(nbthreads);
-	int THRESHOLD = 2;
+        int THRESHOLD = 1000000000;
 	if(start>=end)
 	{
 		return ;
 	}
 
 	int middle = (start+end)/2;
-	#pragma omp parallel
+	int limit = 5000;
+	if(start-end > limit)
 	{
 	#pragma omp task
 	mergesort(start,middle,array,nbthreads,n); //same process but with a little bit of modification
-
-        #pragma omp task 
+	#pragma omp task
 	mergesort(middle+1,end,array,nbthreads,n); 
 	#pragma omp taskwait
+	//if(end-start < THRESHOLD)
+        merge(start,end,array,nbthreads,n);
 	}
-	merge(start,end,array,nbthreads,n);
-//threaded_merge(start,end,array);
+	else
+	{
+	mergesort(start,middle,array,nbthreads,n); //same process but with a little bit of modification
+	mergesort(middle+1,end,array,nbthreads,n); 
+        merge(start,end,array,nbthreads,n);
+	}
+
 
 }
 
@@ -272,11 +297,26 @@ int main(int argc, char* argv[])
   generateMergeSortData (arr, n);
 
   //insert sorting code here.
+  
+   int* temp = new int[n];
 
 
+   //for(int i =0;i<n;i++)
+   // cout<<arr[i]<<" ";
+
+ omp_set_num_threads(nbthreads);
  std::chrono::time_point<std::chrono::system_clock> start_clock, end_clock;
    start_clock = std::chrono::system_clock::now();
-mergesort(0,n-1,arr,nbthreads,n);
+
+   #pragma omp parallel
+   {
+       #pragma omp single
+       {
+	       mergesort(0,n-1,arr,nbthreads,n);
+       
+       }
+   }    
+
   end_clock = std::chrono::system_clock::now();
 std::chrono::duration<double> elapsed_seconds = end_clock-start_clock;
   cerr<<elapsed_seconds.count();
@@ -288,8 +328,8 @@ std::chrono::duration<double> elapsed_seconds = end_clock-start_clock;
   // cout<<endl;
   
 	
-  // for(int i =0;i<n;i++)
-   // cout<<arr[i]<<" ";
+ //for(int i =0;i<n;i++)
+ //   cout<<arr[i]<<" ";
 
 
 
