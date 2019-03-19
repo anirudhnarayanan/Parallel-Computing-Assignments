@@ -160,10 +160,13 @@ int lcsparallel(char* X,char *Y, int m , int n , int **L, int row)
 		if(i!=0&&row-i!=0&&i<=m&&row-i<=n)
 		{
 		        //#pragma omp task	
-			cout<<i<<" "<<row-i<<endl;
+			//cout<<i<<" "<<row-i<<endl;
 			lcsflat(X,Y,m,n,L,i,row - i);
+			//cout<<L[i][row-i]<<endl;
 		}
 	}
+
+        #pragma omp taskwait
 	
 	//lcscall(X,Y,m,n,L,1,row);
 
@@ -172,7 +175,11 @@ int lcsparallel(char* X,char *Y, int m , int n , int **L, int row)
         //#pragma omp taskwait
 	
 	if(row > m+n)
+	{
+		//cout<<"return value";
+		cout<<L[m][n]<<endl;
 		return L[m][n];
+	}
 
 	lcsparallel(X,Y,m,n,L,row+1);
 
@@ -231,6 +238,7 @@ int main (int argc, char* argv[]) {
     {
     //result = lcsnew(X,Y,m,n,nbthreads,L,0,0);
     result = lcsparallel(X,Y,m,n,L,row);
+    cout<<result;
     //result = lcs(X,Y,m,n,nbthreads);
 
     }
